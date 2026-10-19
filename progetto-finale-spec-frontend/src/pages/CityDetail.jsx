@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { API_URL } from '../config'
 import { useComparator } from '../context/ComparatorContext'
+import { useFavorites } from '../context/FavoritesContext'
 
 function CityDetail() {
     // Prende l'id dall'URL (es. /cities/10 → id = "10")
@@ -13,6 +14,7 @@ function CityDetail() {
 
     // Context del comparatore
     const { addToComparator, isInComparator } = useComparator()
+    const { toggleFavorite, isFavorite } = useFavorites()
 
     // Fetch della città ogni volta che cambia l'id nell'URL
     useEffect(() => {
@@ -65,8 +67,11 @@ function CityDetail() {
 
             {/* Pulsanti azione */}
             <div className="mb-4 d-flex gap-2">
-                <button className="btn btn-outline-danger" disabled>
-                    ❤️ Aggiungi ai preferiti
+                <button
+                    className={`btn ${isFavorite(city.id) ? 'btn-danger' : 'btn-outline-danger'}`}
+                    onClick={() => toggleFavorite(city)}
+                >
+                    {isFavorite(city.id) ? '💔 Rimuovi dai preferiti' : '❤️ Aggiungi ai preferiti'}
                 </button>
                 <button
                     className={`btn ${isInComparator(city.id) ? 'btn-success' : 'btn-outline-success'}`}
