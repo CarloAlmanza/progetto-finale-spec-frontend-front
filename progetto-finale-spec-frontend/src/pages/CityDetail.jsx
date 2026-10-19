@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { API_URL } from '../config'
+import { useComparator } from '../context/ComparatorContext'
 
 function CityDetail() {
     // Prende l'id dall'URL (es. /cities/10 → id = "10")
@@ -9,6 +10,9 @@ function CityDetail() {
     const [city, setCity] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+
+    // Context del comparatore
+    const { addToComparator, isInComparator } = useComparator()
 
     // Fetch della città ogni volta che cambia l'id nell'URL
     useEffect(() => {
@@ -59,13 +63,17 @@ function CityDetail() {
                 <span className="badge bg-primary fs-6">{city.category}</span>
             </div>
 
-            {/* Pulsanti azione (placeholder) */}
+            {/* Pulsanti azione */}
             <div className="mb-4 d-flex gap-2">
                 <button className="btn btn-outline-danger" disabled>
                     ❤️ Aggiungi ai preferiti
                 </button>
-                <button className="btn btn-outline-success" disabled>
-                    ⚖️ Aggiungi al comparatore
+                <button
+                    className={`btn ${isInComparator(city.id) ? 'btn-success' : 'btn-outline-success'}`}
+                    onClick={() => addToComparator(city)}
+                    disabled={isInComparator(city.id)}
+                >
+                    {isInComparator(city.id) ? '✅ Nel comparatore' : '⚖️ Aggiungi al comparatore'}
                 </button>
             </div>
 
