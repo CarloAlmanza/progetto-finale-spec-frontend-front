@@ -13,3 +13,18 @@ body {
 .cursor-pointer {
   cursor: pointer;
 }
+
+/* Hover effect sulle card città */
+.card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Migliora leggibilità dei badge */
+.badge {
+  font-weight: 500;
+}

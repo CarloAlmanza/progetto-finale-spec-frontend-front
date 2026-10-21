@@ -124,7 +124,13 @@ function CityList() {
 
             {/* Griglia delle card */}
             {filteredCities.length === 0 ? (
-                <div className="alert alert-info">🔎 Nessuna città trovata.</div>
+                <div className="alert alert-warning text-center">
+                    <h5>🔎 Nessuna città trovata</h5>
+                    <p className="mb-2">Prova a cambiare i filtri o la ricerca.</p>
+                    <button className="btn btn-sm btn-outline-secondary" onClick={resetFilters}>
+                        Reset filtri
+                    </button>
+                </div>
             ) : (
                 <div className="row g-3">
                     {filteredCities.map(city => (

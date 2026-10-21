@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useFavorites } from '../context/FavoritesContext'
 
 function Navbar() {
@@ -9,11 +9,31 @@ function Navbar() {
             <div className="container">
                 <Link className="navbar-brand" to="/">🌍 CityCompare</Link>
                 <div className="navbar-nav">
-                    <Link className="nav-link" to="/cities">Città</Link>
-                    <Link className="nav-link" to="/comparator">Confronta</Link>
-                    <Link className="nav-link" to="/favorites">
+                    <NavLink
+                        className={({ isActive }) => `nav-link ${isActive ? 'active fw-bold' : ''}`}
+                        to="/"
+                        end
+                    >
+                        Home
+                    </NavLink>
+                    <NavLink
+                        className={({ isActive }) => `nav-link ${isActive ? 'active fw-bold' : ''}`}
+                        to="/cities"
+                    >
+                        Città
+                    </NavLink>
+                    <NavLink
+                        className={({ isActive }) => `nav-link ${isActive ? 'active fw-bold' : ''}`}
+                        to="/comparator"
+                    >
+                        Confronta
+                    </NavLink>
+                    <NavLink
+                        className={({ isActive }) => `nav-link ${isActive ? 'active fw-bold' : ''}`}
+                        to="/favorites"
+                    >
                         ❤️ Preferiti {count > 0 && <span className="badge bg-danger">{count}</span>}
-                    </Link>
+                    </NavLink>
                 </div>
             </div>
         </nav>
