@@ -5,10 +5,12 @@ import CityList from './pages/CityList'
 import CityDetail from './pages/CityDetail'
 import Comparator from './pages/Comparator'
 import Favorites from './pages/Favorites'
+import ScrollToTop from './components/ScrollToTop'
 
 function App() {
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       <main className="container py-4">
         <Routes>
