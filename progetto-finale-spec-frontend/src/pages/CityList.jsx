@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
+import { useDebounce } from '../hooks/useDebounce'
 import CityCard from '../components/CityCard'
 
 function CityList() {
@@ -14,6 +15,9 @@ function CityList() {
     // Stato per caricamento ed errori
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
+
+    // 👇 Valore debounced della ricerca (aggiornato 300ms dopo l'ultimo tasto)
+    const debouncedSearch = useDebounce(searchTerm, 300)
 
     // Fetch iniziale al mount del componente
     useEffect(() => {
@@ -34,13 +38,12 @@ function CityList() {
     }, [])
 
     // Ricaviamo la lista di categorie uniche dalle città caricate
-    // (semplice con Set, per non ripetere "Capitale", "Moderna", ecc.)
     const categories = [...new Set(cities.map(c => c.category))].sort()
 
-    // Applica ricerca, filtro e ordinamento (senza mutare l'array originale)
+    // Applica ricerca (con debounce), filtro e ordinamento
     const filteredCities = cities
         .filter(city =>
-            city.title.toLowerCase().includes(searchTerm.toLowerCase())
+            city.title.toLowerCase().includes(debouncedSearch.toLowerCase())
         )
         .filter(city =>
             selectedCategory === '' || city.category === selectedCategory
