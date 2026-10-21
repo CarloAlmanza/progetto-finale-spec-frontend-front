@@ -1,23 +1,20 @@
 import { createContext, useContext, useState } from 'react'
 
-// 1. Creiamo il Context
 const ComparatorContext = createContext()
 
-// 2. Creiamo il Provider (il "contenitore" dello stato)
+// Numero massimo di città nel comparatore
+export const MAX_COMPARATOR = 4
+
 export function ComparatorProvider({ children }) {
-    // Array di 2 città selezionate (max 2)
     const [comparatorCities, setComparatorCities] = useState([])
 
-    // Aggiunge una città al comparatore (max 2)
+    // Aggiunge una città al comparatore (max MAX_COMPARATOR)
     function addToComparator(city) {
         setComparatorCities(prev => {
             // Se già presente, non aggiungo
             if (prev.some(c => c.id === city.id)) return prev
-            // Se ho già 2, sostituisco il secondo (o blocco?)
-            if (prev.length >= 2) {
-                // Opzione: sostituisci il primo (FIFO)
-                return [prev[1], city]
-            }
+            // Se ho già raggiunto il massimo, non aggiungo
+            if (prev.length >= MAX_COMPARATOR) return prev
             return [...prev, city]
         })
     }
@@ -37,13 +34,14 @@ export function ComparatorProvider({ children }) {
         return comparatorCities.some(c => c.id === cityId)
     }
 
-    // Valore esposto a tutti i componenti
     const value = {
         comparatorCities,
         addToComparator,
         removeFromComparator,
         clearComparator,
         isInComparator,
+        isFull: comparatorCities.length >= MAX_COMPARATOR,
+        count: comparatorCities.length,
     }
 
     return (
@@ -53,7 +51,6 @@ export function ComparatorProvider({ children }) {
     )
 }
 
-// 3. Hook personalizzato per usare il Context
 export function useComparator() {
     const context = useContext(ComparatorContext)
     if (!context) {

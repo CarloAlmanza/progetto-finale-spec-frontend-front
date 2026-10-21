@@ -35,7 +35,7 @@ function Home() {
                     <div className="card h-100 shadow-sm text-center">
                         <div className="card-body d-flex flex-column">
                             <div className="fs-1 mb-3">⚖️</div>
-                            <h5 className="card-title">Confronta 2 città</h5>
+                            <h5 className="card-title">Confronta le città</h5>
                             <p className="card-text text-muted">
                                 Metti due città una accanto all'altra e scopri le differenze a colpo d'occhio.
                             </p>

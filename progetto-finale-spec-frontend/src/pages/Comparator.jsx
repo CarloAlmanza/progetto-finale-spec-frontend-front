@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react'
 import { API_URL } from '../config'
-import { useComparator } from '../context/ComparatorContext'
+import { useComparator, MAX_COMPARATOR } from '../context/ComparatorContext'
 
 function Comparator() {
-    // Lista completa di città (per i dropdown)
+    // Lista completa (per il dropdown "aggiungi")
     const [allCities, setAllCities] = useState([])
-    // Dettagli delle 2 città selezionate (con tutte le proprietà)
-    const [cityA, setCityA] = useState(null)
-    const [cityB, setCityB] = useState(null)
+    // Dettagli completi delle città selezionate
+    const [detailedCities, setDetailedCities] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
-    // Context del comparatore
-    const { comparatorCities, addToComparator, removeFromComparator, clearComparator } = useComparator()
+    const {
+        comparatorCities,
+        addToComparator,
+        removeFromComparator,
+        clearComparator,
+        isFull,
+        count,
+    } = useComparator()
 
-    // Carica la lista città all'avvio
+    // Carica lista città all'avvio
     useEffect(() => {
         async function fetchCities() {
             try {
@@ -32,55 +37,39 @@ function Comparator() {
         fetchCities()
     }, [])
 
-    // Quando cambiano le 2 città nel context, carico i dettagli
+    // Quando cambia comparatorCities, ricarica i dettagli completi
     useEffect(() => {
-        async function loadCityDetails() {
-            // Se ce ne sono 2, carico entrambe
-            if (comparatorCities.length === 2) {
-                try {
-                    const [a, b] = comparatorCities
-                    const [resA, resB] = await Promise.all([
-                        fetch(`${API_URL}/cities/${a.id}`),
-                        fetch(`${API_URL}/cities/${b.id}`),
-                    ])
-                    const dataA = await resA.json()
-                    const dataB = await resB.json()
-                    setCityA(dataA.city)
-                    setCityB(dataB.city)
-                } catch (err) {
-                    setError(err.message)
-                }
-            } else {
-                setCityA(null)
-                setCityB(null)
+        async function loadDetails() {
+            if (comparatorCities.length === 0) {
+                setDetailedCities([])
+                return
+            }
+            try {
+                // Fetch in parallelo di tutti i dettagli
+                const results = await Promise.all(
+                    comparatorCities.map(c =>
+                        fetch(`${API_URL}/cities/${c.id}`).then(r => r.json())
+                    )
+                )
+                setDetailedCities(results.map(r => r.city))
+            } catch (err) {
+                setError(err.message)
             }
         }
-        loadCityDetails()
+        loadDetails()
     }, [comparatorCities])
 
-    // Handler: seleziona città dallo slot 1 o 2
-    function handleSelectCity(slot, cityId) {
-        // Rimuovi la città precedente dello slot
-        if (slot === 0 && comparatorCities[0]) {
-            removeFromComparator(comparatorCities[0].id)
-        }
-        if (slot === 1 && comparatorCities[1]) {
-            removeFromComparator(comparatorCities[1].id)
-        }
-        // Se l'utente ha scelto "--", non aggiungo nulla
+    // Handler per aggiungere una città da dropdown
+    function handleAdd(cityId) {
         if (!cityId) return
         const city = allCities.find(c => c.id === Number(cityId))
         if (city) addToComparator(city)
     }
 
-    // Trova l'id di una città nel comparatore
-    const cityAId = comparatorCities[0]?.id || ''
-    const cityBId = comparatorCities[1]?.id || ''
-
     if (loading) return <div className="text-center py-5">⏳ Caricamento…</div>
     if (error) return <div className="alert alert-danger">❌ {error}</div>
 
-    // Lista delle proprietà da confrontare (stessa per entrambe)
+    // Lista delle proprietà da confrontare
     const fieldsToCompare = [
         { key: 'country', label: 'Paese' },
         { key: 'population', label: 'Popolazione', format: v => v.toLocaleString('it-IT') + ' abitanti' },
@@ -97,99 +86,109 @@ function Comparator() {
         <div>
             <h1 className="mb-4">⚖️ Comparatore</h1>
             <p className="text-muted">
-                Seleziona due città dai menu qui sotto per confrontarle affiancate.
+                Seleziona fino a <strong>{MAX_COMPARATOR}</strong> città da confrontare affiancate.
             </p>
 
-            {/* Selettori */}
+            {/* Dropdown "aggiungi città" */}
             <div className="row g-3 mb-4">
                 <div className="col-md-6">
-                    <label className="form-label fw-bold">Città A</label>
+                    <label className="form-label fw-bold">Aggiungi una città</label>
                     <select
                         className="form-select"
-                        value={cityAId}
-                        onChange={e => handleSelectCity(0, e.target.value)}
+                        value=""
+                        onChange={e => handleAdd(e.target.value)}
+                        disabled={isFull}
                     >
-                        <option value="">— Seleziona una città —</option>
-                        {allCities.map(city => (
-                            <option key={city.id} value={city.id}>
-                                {city.title} ({city.category})
-                            </option>
-                        ))}
+                        <option value="">
+                            {isFull ? `Massimo ${MAX_COMPARATOR} città raggiunto` : '— Scegli una città —'}
+                        </option>
+                        {allCities
+                            .filter(c => !comparatorCities.some(cc => cc.id === c.id))
+                            .map(city => (
+                                <option key={city.id} value={city.id}>
+                                    {city.title} ({city.category})
+                                </option>
+                            ))}
                     </select>
                 </div>
-                <div className="col-md-6">
-                    <label className="form-label fw-bold">Città B</label>
-                    <select
-                        className="form-select"
-                        value={cityBId}
-                        onChange={e => handleSelectCity(1, e.target.value)}
-                    >
-                        <option value="">— Seleziona una città —</option>
-                        {allCities.map(city => (
-                            <option key={city.id} value={city.id}>
-                                {city.title} ({city.category})
-                            </option>
-                        ))}
-                    </select>
+                <div className="col-md-6 d-flex align-items-end gap-2">
+                    <span className="badge bg-info fs-6">
+                        {count}/{MAX_COMPARATOR} selezionate
+                    </span>
+                    {count > 0 && (
+                        <button className="btn btn-outline-danger" onClick={clearComparator}>
+                            🗑️ Svuota
+                        </button>
+                    )}
                 </div>
             </div>
 
-            {/* Bottone svuota */}
-            {comparatorCities.length > 0 && (
-                <button className="btn btn-outline-danger mb-4" onClick={clearComparator}>
-                    🗑️ Svuota comparatore
-                </button>
-            )}
-
-            {/* Tabella di confronto (solo se ho 2 città) */}
-            {cityA && cityB ? (
-                <div className="card shadow-sm">
-                    <div className="card-body">
-                        <table className="table table-bordered mb-0">
-                            <thead>
-                                <tr>
-                                    <th style={{ width: '30%' }}>Caratteristica</th>
-                                    <th className="text-center" style={{ width: '35%' }}>
-                                        <h5 className="mb-0">{cityA.title}</h5>
-                                        <span className="badge bg-primary">{cityA.category}</span>
-                                    </th>
-                                    <th className="text-center" style={{ width: '35%' }}>
-                                        <h5 className="mb-0">{cityB.title}</h5>
-                                        <span className="badge bg-primary">{cityB.category}</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {fieldsToCompare.map(field => {
-                                    const valueA = cityA[field.key]
-                                    const valueB = cityB[field.key]
-                                    const isDifferent = valueA !== valueB
-                                    const formattedA = field.format ? field.format(valueA) : valueA
-                                    const formattedB = field.format ? field.format(valueB) : valueB
-
-                                    return (
-                                        <tr key={field.key}>
-                                            <th scope="row">{field.label}</th>
-                                            <td
-                                                className={`text-center ${isDifferent ? 'table-warning' : ''}`}
-                                            >
-                                                {formattedA}
-                                            </td>
-                                            <td
-                                                className={`text-center ${isDifferent ? 'table-warning' : ''}`}
-                                            >
-                                                {formattedB}
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+            {/* Tabella di confronto */}
+            {detailedCities.length === 0 ? (
+                <div className="alert alert-info text-center">
+                    <h5>👆 Nessuna città selezionata</h5>
+                    <p className="mb-0">Aggiungi almeno 2 città per confrontarle.</p>
                 </div>
             ) : (
-                <div className="alert alert-info">
-                    👆 Seleziona <strong>due città</strong> per iniziare il confronto.
+                <div className="card shadow-sm">
+                    <div className="card-body">
+                        <div className="table-responsive">
+                            <table className="table table-bordered mb-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: '20%' }}>Caratteristica</th>
+                                        {detailedCities.map(city => (
+                                            <th key={city.id} className="text-center">
+                                                <div className="d-flex flex-column align-items-center gap-1">
+                                                    <h5 className="mb-0">{city.title}</h5>
+                                                    <span className="badge bg-primary">{city.category}</span>
+                                                    <button
+                                                        className="btn btn-sm btn-outline-danger mt-1"
+                                                        onClick={() => removeFromComparator(city.id)}
+                                                        title="Rimuovi dal comparatore"
+                                                    >
+                                                        ✕ Rimuovi
+                                                    </button>
+                                                </div>
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {fieldsToCompare.map(field => {
+                                        // Per ogni riga, controllo se TUTTI i valori sono uguali
+                                        const values = detailedCities.map(c => c[field.key])
+                                        const allSame = values.every(v => v === values[0])
+
+                                        return (
+                                            <tr key={field.key}>
+                                                <th scope="row">{field.label}</th>
+                                                {detailedCities.map((city, i) => {
+                                                    const rawValue = city[field.key]
+                                                    const formatted = field.format ? field.format(rawValue) : rawValue
+                                                    return (
+                                                        <td
+                                                            key={city.id}
+                                                            className={`text-center ${!allSame ? 'table-warning' : ''}`}
+                                                        >
+                                                            {formatted}
+                                                        </td>
+                                                    )
+                                                })}
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Suggerimento se ce n'è solo 1 */}
+            {detailedCities.length === 1 && (
+                <div className="alert alert-secondary mt-3">
+                    💡 Aggiungi almeno un'altra città per vedere il confronto completo.
                 </div>
             )}
         </div>
